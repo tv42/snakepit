@@ -9,10 +9,7 @@ metadata = sq.MetaData()
 hive_primary = sq.Table(
     'hive_primary_DIMENSION',
     metadata,
-    sq.Column('id', sq.Integer,
-              nullable=False,
-              index=True,
-              ),
+    sq.Column('id', sq.Integer, primary_key=True),
     sq.Column('node', sq.SmallInteger,
               nullable=False,
               index=True,
