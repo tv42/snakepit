@@ -5,7 +5,7 @@ import os
 import datetime
 import sqlalchemy as sq
 
-from snakepit import hive, directory, connect
+from snakepit import directory, create, connect
 
 from snakepit.test.util import maketemp, assert_raises
 
@@ -46,14 +46,8 @@ class Connect_Test(object):
             read_only=False,
             )
 
-        hive_metadata = sq.MetaData()
-        hive_metadata.bind = sq.create_engine(
-            'sqlite:///%s' % os.path.join(tmp, 'hive.db'),
-            strategy='threadlocal',
-            )
-        for table in hive.metadata.tables.values():
-            table.tometadata(hive_metadata)
-        hive_metadata.create_all()
+        hive_metadata = create.create_hive(
+            'sqlite:///%s' % os.path.join(tmp, 'hive.db'))
 
         t = hive_metadata.tables['partition_dimension_metadata']
         t.insert().execute(
@@ -77,14 +71,8 @@ class Connect_Test(object):
     def test_bad_dimension(self):
         tmp = maketemp()
 
-        hive_metadata = sq.MetaData()
-        hive_metadata.bind = sq.create_engine(
-            'sqlite:///%s' % os.path.join(tmp, 'hive.db'),
-            strategy='threadlocal',
-            )
-        for table in hive.metadata.tables.values():
-            table.tometadata(hive_metadata)
-        hive_metadata.create_all()
+        hive_metadata = create.create_hive(
+            'sqlite:///%s' % os.path.join(tmp, 'hive.db'))
 
         t = hive_metadata.tables['partition_dimension_metadata']
         t.insert().execute(
@@ -129,14 +117,8 @@ class Connect_Test(object):
             read_only=False,
             )
 
-        hive_metadata = sq.MetaData()
-        hive_metadata.bind = sq.create_engine(
-            'sqlite:///%s' % os.path.join(tmp, 'hive.db'),
-            strategy='threadlocal',
-            )
-        for table in hive.metadata.tables.values():
-            table.tometadata(hive_metadata)
-        hive_metadata.create_all()
+        hive_metadata = create.create_hive(
+            'sqlite:///%s' % os.path.join(tmp, 'hive.db'))
 
         t = hive_metadata.tables['partition_dimension_metadata']
         t.insert().execute(
@@ -171,14 +153,8 @@ class Connect_Test(object):
             read_only=False,
             )
 
-        hive_metadata = sq.MetaData()
-        hive_metadata.bind = sq.create_engine(
-            'sqlite:///%s' % os.path.join(tmp, 'hive.db'),
-            strategy='threadlocal',
-            )
-        for table in hive.metadata.tables.values():
-            table.tometadata(hive_metadata)
-        hive_metadata.create_all()
+        hive_metadata = create.create_hive(
+            'sqlite:///%s' % os.path.join(tmp, 'hive.db'))
 
         t = hive_metadata.tables['partition_dimension_metadata']
         t.insert().execute(
@@ -239,14 +215,8 @@ class CreateRecord_Test(object):
             )
         pri.create()
 
-        hive_metadata = sq.MetaData()
-        hive_metadata.bind = sq.create_engine(
-            'sqlite:///%s' % os.path.join(tmp, 'hive.db'),
-            strategy='threadlocal',
-            )
-        for table in hive.metadata.tables.values():
-            table.tometadata(hive_metadata)
-        hive_metadata.create_all()
+        hive_metadata = create.create_hive(
+            'sqlite:///%s' % os.path.join(tmp, 'hive.db'))
 
         t = hive_metadata.tables['partition_dimension_metadata']
         t.insert().execute(
@@ -286,14 +256,8 @@ class CreateRecord_Test(object):
             )
         pri.create()
 
-        hive_metadata = sq.MetaData()
-        hive_metadata.bind = sq.create_engine(
-            'sqlite:///%s' % os.path.join(tmp, 'hive.db'),
-            strategy='threadlocal',
-            )
-        for table in hive.metadata.tables.values():
-            table.tometadata(hive_metadata)
-        hive_metadata.create_all()
+        hive_metadata = create.create_hive(
+            'sqlite:///%s' % os.path.join(tmp, 'hive.db'))
 
         t = hive_metadata.tables['partition_dimension_metadata']
         t.insert().execute(
