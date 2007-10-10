@@ -207,3 +207,116 @@ class Connect_Test(object):
             str(e),
             'No such node: dimension %r, node_id 42' % 'frob',
             )
+
+
+class CreateRecord_Test(object):
+
+    def test_simple(self):
+        tmp = maketemp()
+
+        p42_metadata = sq.MetaData()
+        p42_metadata.bind = sq.create_engine(
+            'sqlite:///%s' % os.path.join(tmp, 'p42.db'),
+            strategy='threadlocal',
+            )
+        t_frob = sq.Table(
+            'frob',
+            p42_metadata,
+            sq.Column('id', sq.Integer, primary_key=True),
+            sq.Column('xyzzy', sq.Integer, nullable=False),
+            )
+        p42_metadata.create_all()
+
+        directory_metadata = sq.MetaData()
+        directory_metadata.bind = sq.create_engine(
+            'sqlite:///%s' % os.path.join(tmp, 'directory.db'),
+            strategy='threadlocal',
+            )
+        pri = directory.dynamic_table(
+            table=directory.hive_primary,
+            metadata=directory_metadata,
+            name='hive_primary_frob',
+            )
+        pri.create()
+
+        hive_metadata = sq.MetaData()
+        hive_metadata.bind = sq.create_engine(
+            'sqlite:///%s' % os.path.join(tmp, 'hive.db'),
+            strategy='threadlocal',
+            )
+        for table in hive.metadata.tables.values():
+            table.tometadata(hive_metadata)
+        hive_metadata.create_all()
+
+        t = hive_metadata.tables['partition_dimension_metadata']
+        t.insert().execute(
+            id=13,
+            name='frob',
+            index_uri=str(directory_metadata.bind.url),
+            db_type=0, # TODO
+            )
+        t = hive_metadata.tables['node_metadata']
+        t.insert().execute(
+            id=42,
+            partition_dimension_id=13,
+            name='node42',
+            uri=str(p42_metadata.bind.url),
+            )
+
+        got = connect.create_record(hive_metadata, 'frob')
+        assert isinstance(got, tuple)
+        eq_(len(got), 2)
+        id_, got_engine = got
+        eq_(id_, 1)
+        assert isinstance(got_engine, sq.engine.Engine)
+        eq_(str(got_engine.url), str(p42_metadata.bind.url))
+
+    def test_bad_no_node(self):
+        tmp = maketemp()
+
+        directory_metadata = sq.MetaData()
+        directory_metadata.bind = sq.create_engine(
+            'sqlite:///%s' % os.path.join(tmp, 'directory.db'),
+            strategy='threadlocal',
+            )
+        pri = directory.dynamic_table(
+            table=directory.hive_primary,
+            metadata=directory_metadata,
+            name='hive_primary_frob',
+            )
+        pri.create()
+
+        hive_metadata = sq.MetaData()
+        hive_metadata.bind = sq.create_engine(
+            'sqlite:///%s' % os.path.join(tmp, 'hive.db'),
+            strategy='threadlocal',
+            )
+        for table in hive.metadata.tables.values():
+            table.tometadata(hive_metadata)
+        hive_metadata.create_all()
+
+        t = hive_metadata.tables['partition_dimension_metadata']
+        t.insert().execute(
+            id=13,
+            name='frob',
+            index_uri=str(directory_metadata.bind.url),
+            db_type=0, # TODO
+            )
+        t = hive_metadata.tables['node_metadata']
+        t.insert().execute(
+            id=42,
+            partition_dimension_id=313,
+            name='node42',
+            uri='fake',
+            )
+
+        e = assert_raises(
+            connect.NoNodesForDimensionError,
+            connect.create_record,
+            hive_metadata,
+            'frob',
+            )
+        eq_(
+            str(e),
+            'No nodes found for dimension: %r' % 'frob',
+            )
