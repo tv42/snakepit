@@ -29,6 +29,10 @@ def get_engine(metadata, dimension, id_):
     @param id_: the primary id of the row in question
 
     @type id_: int
+
+    @return: engine connected the the node
+
+    @rtype: sqlalchemy.engine.Engine
     """
 
     t = metadata.tables['partition_dimension_metadata']
