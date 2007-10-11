@@ -8,3 +8,7 @@
 .*.swp
 
 /snakepit/test/tmp
+/stage
+/*.egg-info
+
+/*.db
