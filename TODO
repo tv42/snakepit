@@ -11,3 +11,6 @@
 - support deleting records
 
 - respect the hivedb locking thing
+
+- add load balancing to create_record; see what hivedb does, ponder
+  how to collect load statistics
