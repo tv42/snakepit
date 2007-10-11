@@ -7,3 +7,5 @@
 - support secondary indexes
 
 - cache dimensions and nodes
+
+- support deleting records
