@@ -31,7 +31,7 @@ It's licensed under the `MIT license`_.
 
 You can get ``snakepit`` via ``git`` by saying::
 
-    git clone git://eagain.net/snakepit
+    git clone git://eagain.net/snakepit.git
 
 And install it via::
 
