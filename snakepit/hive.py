@@ -22,13 +22,19 @@ node_metadata = sq.Table(
     sq.Column('uri', sq.String(255), nullable=False),
     # this is int in HiveConfigurationSchema.java
     sq.Column('read_only', sq.Boolean),
+
+    # TODO what's the scope of the name? I guess you could
+    # say name is hostname, and same machine can serve two
+    # dimensions -- then name isn't unique alone, only in
+    # combination with partition_dimension_id
+    sq.UniqueConstraint('partition_dimension_id', 'name'),
     )
 
 partition_dimension_metadata = sq.Table(
     'partition_dimension_metadata',
     metadata,
     sq.Column('id', sq.Integer, primary_key=True),
-    sq.Column('name', sq.String(64), nullable=False),
+    sq.Column('name', sq.String(64), nullable=False, unique=True),
     sq.Column('index_uri', sq.String(255), nullable=False),
     # TODO wth is this used?
     sq.Column('db_type', sq.String(64), nullable=False),
