@@ -16,39 +16,39 @@ class NoSuchNodeError(Exception):
     def __str__(self):
         return ': '.join([self.__doc__]+list(self.args))
 
-def get_engine(metadata, dimension, id_):
+def get_engine(hive_metadata, dimension_name, record_id):
     """
-    Get node ID of hive node that stores C{id_} for C{dimension}.
+    Get node ID of hive node that stores C{record_id} for C{dimension_name}.
 
-    @param metadata: metadata for the hive db, bound to an engine
+    @param hive_metadata: metadata for the hive db, bound to an engine
 
-    @type metadata: sqlalchemy.MetaData
+    @type hive_metadata: sqlalchemy.MetaData
 
-    @param dimension: name of the dimension
+    @param dimension_name: name of the dimension
 
-    @type dimension: str
+    @type dimension_name: str
 
-    @param id_: the primary id of the row in question
+    @param record_id: the primary id of the row in question
 
-    @type id_: int
+    @type record_id: int
 
     @return: engine connected the the node
 
     @rtype: sqlalchemy.engine.Engine
     """
 
-    t = metadata.tables['partition_dimension_metadata']
+    t = hive_metadata.tables['partition_dimension_metadata']
     q = sq.select(
         [
             t.c.id,
             t.c.index_uri,
             ],
-        t.c.name==dimension,
+        t.c.name==dimension_name,
         limit=1,
         )
     res = q.execute().fetchone()
     if res is None:
-        raise NoSuchDimensionError(repr(dimension))
+        raise NoSuchDimensionError(repr(dimension_name))
     partition_id = res[t.c.id]
     index_uri = res[t.c.index_uri]
 
@@ -60,13 +60,13 @@ def get_engine(metadata, dimension, id_):
     t_primary = directory.dynamic_table(
         table=directory.hive_primary,
         metadata=directory_metadata,
-        name='hive_primary_%s' % dimension,
+        name='hive_primary_%s' % dimension_name,
         )
     q = sq.select(
         [
             t_primary.c.node,
             ],
-        t_primary.c.id==id_,
+        t_primary.c.id==record_id,
         limit=1,
         )
     res = q.execute().fetchone()
@@ -74,7 +74,7 @@ def get_engine(metadata, dimension, id_):
         return None
     node_id = res[t_primary.c.node]
 
-    t = metadata.tables['node_metadata']
+    t = hive_metadata.tables['node_metadata']
     q = sq.select(
         [
             t.c.uri,
@@ -87,7 +87,8 @@ def get_engine(metadata, dimension, id_):
         )
     res = q.execute().fetchone()
     if res is None:
-        raise NoSuchNodeError('dimension %r, node_id %d' % (dimension, node_id))
+        raise NoSuchNodeError(
+            'dimension %r, node_id %d' % (dimension_name, node_id))
     node_uri = res[t.c.uri]
 
     node_engine = sq.create_engine(
@@ -102,41 +103,41 @@ class NoNodesForDimensionError(Exception):
     def __str__(self):
         return ': '.join([self.__doc__]+list(self.args))
 
-def create_record(metadata, dimension):
+def create_record(hive_metadata, dimension_name):
     """
     Assign a node to record, insert record into directory, and return
-    its C{id} and C{engine} connected to said node.
+    its C{record_id} and C{node_engine} connected to said node.
 
-    @param metadata: metadata for the hive db, bound to an engine
+    @param hive_metadata: metadata for the hive db, bound to an engine
 
-    @type metadata: sqlalchemy.MetaData
+    @type hive_metadata: sqlalchemy.MetaData
 
-    @param dimension: name of the dimension
+    @param dimension_name: name of the dimension
 
-    @type dimension: str
+    @type dimension_name: str
 
-    @return: the primary id of the row in question and an engine
+    @return: the primary id of the record in question and an engine
     connected to node storing it
 
     @rtype: tuple of (int, sqlalchemy.engine.Engine)
     """
 
-    t = metadata.tables['partition_dimension_metadata']
+    t = hive_metadata.tables['partition_dimension_metadata']
     q = sq.select(
         [
             t.c.id,
             t.c.index_uri,
             ],
-        t.c.name==dimension,
+        t.c.name==dimension_name,
         limit=1,
         )
     res = q.execute().fetchone()
     if res is None:
-        raise NoSuchDimensionError(repr(dimension))
+        raise NoSuchDimensionError(repr(dimension_name))
     partition_id = res[t.c.id]
     index_uri = res[t.c.index_uri]
 
-    t = metadata.tables['node_metadata']
+    t = hive_metadata.tables['node_metadata']
     q = sq.select(
         [
             t.c.id,
@@ -148,7 +149,7 @@ def create_record(metadata, dimension):
     try:
         res = random.choice(res)
     except IndexError:
-        raise NoNodesForDimensionError(repr(dimension))
+        raise NoNodesForDimensionError(repr(dimension_name))
     node_id = res[t.c.id]
     node_uri = res[t.c.uri]
 
@@ -160,7 +161,7 @@ def create_record(metadata, dimension):
     t_primary = directory.dynamic_table(
         table=directory.hive_primary,
         metadata=directory_metadata,
-        name='hive_primary_%s' % dimension,
+        name='hive_primary_%s' % dimension_name,
         )
     r = t_primary.insert().execute(
         node=node_id,
@@ -168,10 +169,10 @@ def create_record(metadata, dimension):
         last_updated=datetime.datetime.now(),
         read_only=False,
         )
-    (id_,) = r.last_inserted_ids()
+    (record_id,) = r.last_inserted_ids()
 
     node_engine = sq.create_engine(
         node_uri,
         strategy='threadlocal',
         )
-    return (id_, node_engine)
+    return (record_id, node_engine)

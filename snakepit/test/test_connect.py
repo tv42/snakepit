@@ -45,12 +45,16 @@ class Connect_Test(object):
             node_uri=str(p42_metadata.bind.url),
             )
         (record_id, node_engine) = connect.create_record(
-            metadata=hive_metadata,
-            dimension='frob',
+            hive_metadata=hive_metadata,
+            dimension_name='frob',
             )
         node_engine.dispose()
 
-        got = connect.get_engine(hive_metadata, 'frob', record_id)
+        got = connect.get_engine(
+            hive_metadata=hive_metadata,
+            dimension_name='frob',
+            record_id=record_id,
+            )
         assert isinstance(got, sq.engine.Engine)
         eq_(str(got.url), str(p42_metadata.bind.url))
         got.dispose()
@@ -69,9 +73,9 @@ class Connect_Test(object):
         e = assert_raises(
             connect.NoSuchDimensionError,
             connect.get_engine,
-            metadata=hive_metadata,
-            dimension='frob',
-            id_=123,
+            hive_metadata=hive_metadata,
+            dimension_name='frob',
+            record_id=123,
             )
         eq_(
             str(e),
@@ -99,16 +103,16 @@ class Connect_Test(object):
             node_uri='sqlite://',
             )
         (record_id, node_engine) = connect.create_record(
-            metadata=hive_metadata,
-            dimension='frob',
+            hive_metadata=hive_metadata,
+            dimension_name='frob',
             )
         node_engine.dispose()
         directory_metadata.bind.dispose()
         got = connect.get_engine(
-            metadata=hive_metadata,
-            dimension='frob',
+            hive_metadata=hive_metadata,
+            dimension_name='frob',
             # make it wrong to trigger the error
-            id_=record_id+1,
+            record_id=record_id+1,
             )
         assert got is None
         hive_metadata.bind.dispose()
@@ -135,8 +139,8 @@ class Connect_Test(object):
             node_uri='sqlite://',
             )
         (record_id, node_engine) = connect.create_record(
-            metadata=hive_metadata,
-            dimension='frob',
+            hive_metadata=hive_metadata,
+            dimension_name='frob',
             )
         node_engine.dispose()
         hive_metadata.tables['node_metadata'].delete().execute()
@@ -197,10 +201,10 @@ class CreateRecord_Test(object):
         got = connect.create_record(hive_metadata, 'frob')
         assert isinstance(got, tuple)
         eq_(len(got), 2)
-        id_, got_engine = got
-        eq_(id_, 1)
-        assert isinstance(got_engine, sq.engine.Engine)
-        eq_(str(got_engine.url), str(p42_metadata.bind.url))
+        record_id, node_engine = got
+        eq_(record_id, 1)
+        assert isinstance(node_engine, sq.engine.Engine)
+        eq_(str(node_engine.url), str(p42_metadata.bind.url))
 
     def test_bad_no_node(self):
         tmp = maketemp()
