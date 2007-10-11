@@ -9,3 +9,5 @@
 - cache dimensions and nodes
 
 - support deleting records
+
+- respect the hivedb locking thing
