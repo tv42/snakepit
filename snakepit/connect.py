@@ -2,7 +2,7 @@ import datetime
 import random
 import sqlalchemy as sq
 
-from snakepit import directory
+from snakepit import hive, directory
 
 class NoSuchDimensionError(Exception):
     """No such dimension"""
@@ -15,6 +15,29 @@ class NoSuchNodeError(Exception):
 
     def __str__(self):
         return ': '.join([self.__doc__]+list(self.args))
+
+def get_hive(hive_uri):
+    """
+    Open hive at C{hive_uri} and return metadata.
+
+    @param hive_uri: dburi where the hive metadata is stored
+
+    @type hive_uri: str
+
+    @return: A metadata connected to the hive database. Caller is
+    responsible for disposing of the engine with
+    C{metadata.bind.dispose()}.
+
+    @rtype: sqlalchemy.MetaData
+    """
+    hive_metadata = sq.MetaData()
+    hive_metadata.bind = sq.create_engine(
+        hive_uri,
+        strategy='threadlocal',
+        )
+    for table in hive.metadata.tables.values():
+        table.tometadata(hive_metadata)
+    return hive_metadata
 
 def get_engine(hive_metadata, dimension_name, record_id):
     """

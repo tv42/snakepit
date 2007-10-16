@@ -8,7 +8,43 @@ from snakepit import create, connect
 
 from snakepit.test.util import maketemp, assert_raises
 
-class Connect_Test(object):
+class Get_Hive_Test(object):
+
+    def test_simple(self):
+        tmp = maketemp()
+
+        hive_uri = 'sqlite:///%s' % os.path.join(tmp, 'hive.db')
+        hive_metadata = create.create_hive(
+            hive_uri=hive_uri,
+            )
+        dimension_id = create.create_dimension(
+            hive_metadata=hive_metadata,
+            dimension_name='frob',
+            directory_uri=hive_uri,
+            )
+        hive_metadata.bind.dispose()
+
+        hive_metadata = connect.get_hive(
+            hive_uri=hive_uri,
+            )
+        t = hive_metadata.tables['partition_dimension_metadata']
+        got = t.select().execute().fetchall()
+        got = [dict(row) for row in got]
+        #TODO
+        for row in got: del row['db_type']
+        eq_(
+            got,
+            [
+                dict(
+                    id=dimension_id,
+                    name='frob',
+                    index_uri=hive_uri,
+                    ),
+                ],
+            )
+        hive_metadata.bind.dispose()
+
+class Get_Engine_Test(object):
 
     def test_simple(self):
         tmp = maketemp()

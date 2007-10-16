@@ -1,7 +1,6 @@
 import optparse
-import sqlalchemy as sq
 
-from snakepit import create, hive
+from snakepit import create, connect
 
 def create_hive():
     parser = optparse.OptionParser(
@@ -38,13 +37,7 @@ def create_dimension():
         )
     directory_metadata.bind.dispose()
 
-    hive_metadata = sq.MetaData()
-    hive_metadata.bind = sq.create_engine(
-        hive_uri,
-        strategy='threadlocal',
-        )
-    for table in hive.metadata.tables.values():
-        table.tometadata(hive_metadata)
+    hive_metadata = connect.get_hive(hive_uri)
     create.create_dimension(
         hive_metadata=hive_metadata,
         dimension_name=dimension_name,
@@ -63,13 +56,7 @@ def create_node():
     except ValueError:
         parser.error('missing arguments')
 
-    hive_metadata = sq.MetaData()
-    hive_metadata.bind = sq.create_engine(
-        hive_uri,
-        strategy='threadlocal',
-        )
-    for table in hive.metadata.tables.values():
-        table.tometadata(hive_metadata)
+    hive_metadata = connect.get_hive(hive_uri)
     create.create_node(
         hive_metadata,
         dimension_name,
