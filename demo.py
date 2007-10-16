@@ -1,4 +1,9 @@
 #!/usr/bin/python
+
+#
+# Simple demonstration on setting up a hive in Python.
+#
+
 from snakepit import create
 
 hive_uri = 'sqlite:///hive.db'
