@@ -17,10 +17,23 @@ def maketemp():
     mkdir(tmp)
 
     caller = sys._getframe(1)
-    name = '%s.%s' % (
-        sys._getframe(1).f_globals['__name__'],
-        caller.f_code.co_name,
-        )
+
+    # kludgy way to detect methods, if their first arg is called
+    # "self"
+    if (caller.f_code.co_varnames
+        and caller.f_code.co_varnames[0] == 'self'):
+        its_self = caller.f_locals['self']
+        name = '%s.%s.%s' % (
+            its_self.__class__.__module__,
+            its_self.__class__.__name__,
+            caller.f_code.co_name,
+            )
+    else:
+        name = '%s.%s' % (
+            sys._getframe(1).f_globals['__name__'],
+            caller.f_code.co_name,
+            )
+
     tmp = os.path.join(tmp, name)
     try:
         shutil.rmtree(tmp)
