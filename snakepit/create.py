@@ -103,6 +103,10 @@ def create_node(hive_metadata, dimension_id, node_name, node_uri):
 
     Node must be set up before calling this function.
 
+    @return: id of created node
+
+    @rtype: int
+
     @raise NoSuchDimensionError: no such dimension found
 
     @raise NodeExistsError: a node with that name exists
