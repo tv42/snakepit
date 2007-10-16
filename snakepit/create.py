@@ -57,6 +57,10 @@ def create_dimension(hive_metadata, dimension_name, directory_uri):
 
     Directory index must be set up before calling this function.
 
+    @return: id of created dimension
+
+    @rtype: int
+
     @raise DimensionExistsError: a dimension with that name exists
     already in this hive
     """
