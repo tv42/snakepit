@@ -144,13 +144,19 @@ class Get_Engine_Test(object):
             )
         node_engine.dispose()
         directory_metadata.bind.dispose()
-        got = connect.get_engine(
+        e = assert_raises(
+            connect.NoSuchIdError,
+            connect.get_engine,
             hive_metadata=hive_metadata,
             dimension_name='frob',
             # make it wrong to trigger the error
             record_id=record_id+1,
             )
-        assert got is None
+        eq_(
+            str(e),
+            'No such id: dimension %r, record_id %r' \
+                % ('frob', record_id+1),
+            )
         hive_metadata.bind.dispose()
 
     def test_bad_node(self):

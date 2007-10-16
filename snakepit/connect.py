@@ -10,6 +10,12 @@ class NoSuchDimensionError(Exception):
     def __str__(self):
         return ': '.join([self.__doc__]+list(self.args))
 
+class NoSuchIdError(Exception):
+    """No such id"""
+
+    def __str__(self):
+        return ': '.join([self.__doc__]+list(self.args))
+
 class NoSuchNodeError(Exception):
     """No such node"""
 
@@ -94,7 +100,10 @@ def get_engine(hive_metadata, dimension_name, record_id):
         )
     res = q.execute().fetchone()
     if res is None:
-        return None
+        raise NoSuchIdError(
+            'dimension %r, record_id %r'
+            % (dimension_name, record_id),
+            )
     node_id = res[t_primary.c.node]
 
     t = hive_metadata.tables['node_metadata']
