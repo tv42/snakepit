@@ -213,3 +213,100 @@ def assign_node(hive_metadata, dimension_name, dimension_value):
         strategy='threadlocal',
         )
     return node_engine
+
+
+class NoSuchNodeForDimensionValueError(Exception):
+    """Node not found for dimension value"""
+
+    def __str__(self):
+        return ': '.join([self.__doc__]+list(self.args))
+
+def unassign_node(
+    hive_metadata,
+    dimension_name,
+    dimension_value,
+    node_name,
+    ):
+    """
+    Unassign node for this value of the dimension.
+
+    After this call, that node will no longer be asked to serve this
+    dimension value.
+
+    @param hive_metadata: metadata for the hive db, bound to an engine
+
+    @type hive_metadata: sqlalchemy.MetaData
+
+    @param dimension_name: name of the dimension
+
+    @type dimension_name: str
+
+    @param dimension_value: value for this dimension
+
+    @type dimension_value: something matching assumptions set by
+    partition_dimension_metadata.db_type
+
+    @param node_name: name of the node to remove
+
+    @type node_name: str
+    """
+    t = hive_metadata.tables['partition_dimension_metadata']
+    q = sq.select(
+        [
+            t.c.id,
+            t.c.index_uri,
+            ],
+        t.c.name==dimension_name,
+        limit=1,
+        )
+    res = q.execute().fetchone()
+    if res is None:
+        raise NoSuchDimensionError(repr(dimension_name))
+    partition_id = res[t.c.id]
+    index_uri = res[t.c.index_uri]
+
+    t = hive_metadata.tables['node_metadata']
+    q = sq.select(
+        [
+            t.c.id,
+            ],
+        sq.and_(
+            t.c.partition_dimension_id==partition_id,
+            t.c.name==node_name,
+            ),
+        )
+    res = q.execute().fetchone()
+    if not res:
+        raise NoNodesForDimensionError(repr(dimension_name))
+    node_id = res[t.c.id]
+
+    directory_metadata = sq.MetaData()
+    directory_metadata.bind = sq.create_engine(
+        index_uri,
+        strategy='threadlocal',
+        )
+    t_primary = directory.get_primary_table(
+        directory_metadata=directory_metadata,
+        dimension_name=dimension_name,
+        db_type='INTEGER',
+        )
+    q = t_primary.delete(
+        sq.and_(
+            t_primary.c.id==dimension_value,
+            t_primary.c.node==node_id,
+            # TODO t_primary.c.secondary_index_count==0?
+            # TODO t_primary.c.read_only==False?
+            ),
+        )
+    res = q.execute()
+    if res.rowcount < 1:
+        raise NoSuchNodeForDimensionValueError(
+            'dimension %r value %r, node name %r'
+            % (
+                dimension_name,
+                dimension_value,
+                node_name,
+                ),
+            )
+
+    directory_metadata.bind.dispose()

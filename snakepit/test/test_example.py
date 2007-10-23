@@ -83,21 +83,26 @@ def test_createAndUseTheHive():
     res = q.execute().fetchone()
     assert res['count'] > 0
 
-#     # Add a key, just to test.
-#     key = "knife";
-#     (record_id, node_engine) = connect.create_record(
-#         hive_metadata=hive_metadata,
-#         dimension_name=dimension_name,
-#         #TODO id=key,
-#         )
-#     node_engine.dispose()
+    # Add a key, just to test.
+    key = "knife";
+    node_engine = connect.assign_node(
+        hive_metadata=hive_metadata,
+        dimension_name=dimension_name,
+        dimension_value=key,
+        )
+    node_engine.dispose()
 
-#     # Just cleaning up the random key.
-#     connect.delete_record(
-#         hive_metadata=hive_metadata,
-#         dimension_name=dimension_name,
-#         id=key,
-#         )
+    # Just cleaning up the random key.
+
+    # TODO I made this take node_name too, seemed like a more robust
+    # API; for the purposes of this test, we know we only have one
+    # node --tv
+    connect.unassign_node(
+        hive_metadata=hive_metadata,
+        dimension_name=dimension_name,
+        dimension_value=key,
+        node_name='aNode',
+        )
 
     # At this point there is no real data in the Hive just a directory
     # of Primary key to node mappings.

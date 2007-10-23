@@ -291,3 +291,165 @@ class AssignNode_Test(object):
             str(e),
             'No nodes found for dimension: %r' % 'frob',
             )
+
+
+class UnassignNode_Test(object):
+
+    def test_simple(self):
+        tmp = maketemp()
+
+        p42_metadata = sq.MetaData()
+        p42_metadata.bind = sq.create_engine(
+            'sqlite:///%s' % os.path.join(tmp, 'p42.db'),
+            strategy='threadlocal',
+            )
+        t_frob = sq.Table(
+            'frob',
+            p42_metadata,
+            sq.Column('id', sq.Integer, primary_key=True),
+            sq.Column('xyzzy', sq.Integer, nullable=False),
+            )
+        p42_metadata.create_all()
+
+        directory_metadata = create.create_primary_index(
+            directory_uri='sqlite:///%s' % os.path.join(tmp, 'directory.db'),
+            dimension_name='frob',
+            db_type='INTEGER',
+            )
+        hive_metadata = create.create_hive(
+            'sqlite:///%s' % os.path.join(tmp, 'hive.db'))
+
+        dimension_id = create.create_dimension(
+            hive_metadata=hive_metadata,
+            dimension_name='frob',
+            directory_uri=str(directory_metadata.bind.url),
+            )
+        directory_metadata.bind.dispose()
+        create.create_node(
+            hive_metadata=hive_metadata,
+            dimension_id=dimension_id,
+            node_name='node42',
+            node_uri=str(p42_metadata.bind.url),
+            )
+
+        node_engine = connect.assign_node(hive_metadata, 'frob', 1)
+        assert isinstance(node_engine, sq.engine.Engine)
+        eq_(str(node_engine.url), str(p42_metadata.bind.url))
+        node_engine.dispose()
+
+        got = connect.unassign_node(
+            hive_metadata=hive_metadata,
+            dimension_name= 'frob',
+            dimension_value=1,
+            node_name='node42',
+            )
+        eq_(got, None)
+
+        e = assert_raises(
+            connect.NoSuchIdError,
+            connect.get_engine,
+            hive_metadata,
+            'frob',
+            1,
+            )
+        eq_(
+            str(e),
+            'No such id: dimension %r, dimension_value %r'
+            % ('frob', 1),
+            )
+
+    def test_bad_no_dimension(self):
+        tmp = maketemp()
+
+        hive_metadata = create.create_hive(
+            'sqlite:///%s' % os.path.join(tmp, 'hive.db'))
+
+        e = assert_raises(
+            connect.NoSuchDimensionError,
+            connect.unassign_node,
+            hive_metadata=hive_metadata,
+            dimension_name='frob',
+            dimension_value=1,
+            node_name='fake',
+            )
+        eq_(
+            str(e),
+            'No such dimension: %r' % 'frob',
+            )
+
+    def test_bad_no_node(self):
+        tmp = maketemp()
+
+        directory_metadata = create.create_primary_index(
+            directory_uri='sqlite:///%s' \
+                % os.path.join(tmp, 'directory.db'),
+            dimension_name='frob',
+            db_type='INTEGER',
+            )
+        hive_metadata = create.create_hive(
+            'sqlite:///%s' % os.path.join(tmp, 'hive.db'))
+
+        dimension_id = create.create_dimension(
+            hive_metadata=hive_metadata,
+            dimension_name='frob',
+            directory_uri=str(directory_metadata.bind.url),
+            )
+        node_id = create.create_node(
+            hive_metadata=hive_metadata,
+            # make it wrong to trigger the error
+            dimension_id=dimension_id+1,
+            node_name='node42',
+            node_uri='fake',
+            )
+
+        e = assert_raises(
+            connect.NoNodesForDimensionError,
+            connect.unassign_node,
+            hive_metadata=hive_metadata,
+            dimension_name='frob',
+            dimension_value=1,
+            node_name='not-exist',
+            )
+        eq_(
+            str(e),
+            'No nodes found for dimension: %r' % 'frob',
+            )
+
+    def test_bad_no_assignment(self):
+        tmp = maketemp()
+
+        directory_metadata = create.create_primary_index(
+            directory_uri='sqlite:///%s' \
+                % os.path.join(tmp, 'directory.db'),
+            dimension_name='frob',
+            db_type='INTEGER',
+            )
+        hive_metadata = create.create_hive(
+            'sqlite:///%s' % os.path.join(tmp, 'hive.db'))
+
+        dimension_id = create.create_dimension(
+            hive_metadata=hive_metadata,
+            dimension_name='frob',
+            directory_uri=str(directory_metadata.bind.url),
+            )
+        node_id = create.create_node(
+            hive_metadata=hive_metadata,
+            dimension_id=dimension_id,
+            node_name='node42',
+            node_uri='fake',
+            )
+
+        e = assert_raises(
+            connect.NoSuchNodeForDimensionValueError,
+            connect.unassign_node,
+            hive_metadata=hive_metadata,
+            dimension_name='frob',
+            dimension_value=1,
+            node_name='node42',
+            )
+        eq_(
+            str(e),
+            'Node not found for dimension value:'
+            +' dimension %r value %r, node name %r'
+            % ('frob', 1, 'node42'),
+            )
