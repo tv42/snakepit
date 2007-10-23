@@ -88,7 +88,7 @@ def get_engine(hive_metadata, dimension_name, record_id):
         )
     t_primary = directory.dynamic_table(
         table=directory.hive_primary,
-        metadata=directory_metadata,
+        directory_metadata=directory_metadata,
         name='hive_primary_%s' % dimension_name,
         )
     q = sq.select(
@@ -192,7 +192,7 @@ def create_record(hive_metadata, dimension_name):
         )
     t_primary = directory.dynamic_table(
         table=directory.hive_primary,
-        metadata=directory_metadata,
+        directory_metadata=directory_metadata,
         name='hive_primary_%s' % dimension_name,
         )
     r = t_primary.insert().execute(

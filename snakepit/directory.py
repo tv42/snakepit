@@ -39,16 +39,16 @@ hive_secondary = sq.Table(
               ),
     )
 
-def dynamic_table(table, metadata, name):
+def dynamic_table(table, directory_metadata, name):
     """
-    Access C{table} under new C{metadata} with new C{name}.
+    Access C{table} under new C{directory_metadata} with new C{name}.
     """
-    new = metadata.tables.get(name, None)
+    new = directory_metadata.tables.get(name, None)
     if new is not None:
         return new
 
     new = sq.Table(
         name,
-        metadata,
+        directory_metadata,
         *[c.copy() for c in table.columns])
     return new

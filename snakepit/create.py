@@ -31,7 +31,7 @@ def create_primary_index(
         )
     table = directory.dynamic_table(
         table=directory.metadata.tables['hive_primary_DIMENSION'],
-        metadata=directory_metadata,
+        directory_metadata=directory_metadata,
         name='hive_primary_%s' % dimension_name,
         )
     directory_metadata.create_all()

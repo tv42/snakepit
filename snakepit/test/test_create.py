@@ -13,12 +13,12 @@ class Create_Hive_Test(object):
     def test_simple(self):
         tmp = maketemp()
         db_uri = 'sqlite:///%s' % os.path.join(tmp, 'hive.db')
-        metadata = create.create_hive(db_uri)
-        assert isinstance(metadata, sq.MetaData)
-        assert metadata.bind is not None
-        assert isinstance(metadata.bind, sq.engine.Engine)
-        eq_(str(metadata.bind.url), db_uri)
-        metadata.bind.dispose()
+        hive_metadata = create.create_hive(db_uri)
+        assert isinstance(hive_metadata, sq.MetaData)
+        assert hive_metadata.bind is not None
+        assert isinstance(hive_metadata.bind, sq.engine.Engine)
+        eq_(str(hive_metadata.bind.url), db_uri)
+        hive_metadata.bind.dispose()
         engine = sq.create_engine(db_uri)
         res = engine.execute(
             "SELECT name FROM sqlite_master WHERE type='table'")
@@ -34,10 +34,10 @@ class Create_Hive_Test(object):
     def test_repeat(self):
         tmp = maketemp()
         db_uri = 'sqlite:///%s' % os.path.join(tmp, 'hive.db')
-        metadata = create.create_hive(db_uri)
-        metadata.bind.dispose()
-        metadata = create.create_hive(db_uri)
-        metadata.bind.dispose()
+        hive_metadata = create.create_hive(db_uri)
+        hive_metadata.bind.dispose()
+        hive_metadata = create.create_hive(db_uri)
+        hive_metadata.bind.dispose()
 
 class Create_Primary_Index_Test(object):
 
@@ -45,12 +45,15 @@ class Create_Primary_Index_Test(object):
         tmp = maketemp()
         directory_uri = 'sqlite:///%s' % os.path.join(tmp, 'directory.db')
 
-        metadata = create.create_primary_index(directory_uri, 'frob')
-        assert isinstance(metadata, sq.MetaData)
-        assert metadata.bind is not None
-        assert isinstance(metadata.bind, sq.engine.Engine)
-        eq_(str(metadata.bind.url), directory_uri)
-        metadata.bind.dispose()
+        directory_metadata = create.create_primary_index(
+            directory_uri=directory_uri,
+            dimension_name='frob',
+            )
+        assert isinstance(directory_metadata, sq.MetaData)
+        assert directory_metadata.bind is not None
+        assert isinstance(directory_metadata.bind, sq.engine.Engine)
+        eq_(str(directory_metadata.bind.url), directory_uri)
+        directory_metadata.bind.dispose()
         engine = sq.create_engine(directory_uri)
         res = engine.execute(
             "SELECT name FROM sqlite_master WHERE type='table'")
@@ -66,10 +69,16 @@ class Create_Primary_Index_Test(object):
     def test_repeat(self):
         tmp = maketemp()
         directory_uri = 'sqlite:///%s' % os.path.join(tmp, 'directory.db')
-        metadata = create.create_primary_index(directory_uri, 'frob')
-        metadata.bind.dispose()
-        metadata = create.create_primary_index(directory_uri, 'frob')
-        metadata.bind.dispose()
+        directory_metadata = create.create_primary_index(
+            directory_uri=directory_uri,
+            dimension_name='frob',
+            )
+        directory_metadata.bind.dispose()
+        directory_metadata = create.create_primary_index(
+            directory_uri=directory_uri,
+            dimension_name='frob',
+            )
+        directory_metadata.bind.dispose()
 
 class Create_Dimension_Test(object):
 
