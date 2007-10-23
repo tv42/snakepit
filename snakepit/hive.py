@@ -50,6 +50,8 @@ secondary_index_metadata = sq.Table(
               ),
     sq.Column('column_name', sq.String(64), nullable=False),
     sq.Column('db_type', sq.String(64), nullable=False),
+
+    sq.UniqueConstraint('resource_id', 'column_name'),
     )
 
 resource_metadata = sq.Table(
@@ -65,5 +67,8 @@ resource_metadata = sq.Table(
     sq.Column('is_partitioning_resource', sq.Boolean,
               nullable=False,
               default=True),
+
+    # TODO unique on just combo of dimension_id, name?
+    sq.UniqueConstraint('name'),
     )
 
