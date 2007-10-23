@@ -48,6 +48,7 @@ class Create_Primary_Index_Test(object):
         directory_metadata = create.create_primary_index(
             directory_uri=directory_uri,
             dimension_name='frob',
+            db_type='INTEGER',
             )
         assert isinstance(directory_metadata, sq.MetaData)
         assert directory_metadata.bind is not None
@@ -72,11 +73,44 @@ class Create_Primary_Index_Test(object):
         directory_metadata = create.create_primary_index(
             directory_uri=directory_uri,
             dimension_name='frob',
+            db_type='INTEGER',
             )
         directory_metadata.bind.dispose()
         directory_metadata = create.create_primary_index(
             directory_uri=directory_uri,
             dimension_name='frob',
+            db_type='INTEGER',
+            )
+        directory_metadata.bind.dispose()
+
+    def test_types(self):
+        for typename, sqlalch_type in [
+            ('BIGINT', sq.Integer),
+            ('CHAR', sq.String),
+            ('DATE', sq.DateTime),
+            ('DOUBLE', sq.Integer),
+            ('FLOAT', sq.Float),
+            ('INTEGER', sq.Integer),
+            ('SMALLINT', sq.SmallInteger),
+            ('TIMESTAMP', sq.DateTime),
+            ('TINYINT', sq.SmallInteger),
+            ('VARCHAR', sq.String),
+            ]:
+            yield self.check_type, typename, sqlalch_type
+
+    def check_type(self, typename, sqlalch_type):
+        tmp = maketemp()
+        directory_uri = 'sqlite:///%s' % os.path.join(tmp, 'directory.db')
+
+        directory_metadata = create.create_primary_index(
+            directory_uri=directory_uri,
+            dimension_name='frob',
+            db_type=typename,
+            )
+        column = directory_metadata.tables['hive_primary_frob'].c.id
+        assert isinstance(column.type, sqlalch_type), (
+            'db_type %r must result in sqlalch type %r, got %r'
+            % (typename, sqlalch_type, type(column.type)),
             )
         directory_metadata.bind.dispose()
 

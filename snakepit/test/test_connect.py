@@ -65,8 +65,10 @@ class Get_Engine_Test(object):
         hive_metadata = create.create_hive(
             'sqlite:///%s' % os.path.join(tmp, 'hive.db'))
         directory_metadata = create.create_primary_index(
-            'sqlite:///%s' % os.path.join(tmp, 'directory.db'),
-            'frob',
+            directory_uri='sqlite:///%s' \
+                % os.path.join(tmp, 'directory.db'),
+            dimension_name='frob',
+            db_type='INTEGER',
             )
         dimension_id = create.create_dimension(
             hive_metadata=hive_metadata,
@@ -80,16 +82,17 @@ class Get_Engine_Test(object):
             node_name='node42',
             node_uri=str(p42_metadata.bind.url),
             )
-        (record_id, node_engine) = connect.create_record(
+        node_engine = connect.assign_node(
             hive_metadata=hive_metadata,
             dimension_name='frob',
+            dimension_value=1,
             )
         node_engine.dispose()
 
         got = connect.get_engine(
             hive_metadata=hive_metadata,
             dimension_name='frob',
-            record_id=record_id,
+            dimension_value=1,
             )
         assert isinstance(got, sq.engine.Engine)
         eq_(str(got.url), str(p42_metadata.bind.url))
@@ -111,7 +114,7 @@ class Get_Engine_Test(object):
             connect.get_engine,
             hive_metadata=hive_metadata,
             dimension_name='frob',
-            record_id=123,
+            dimension_value=123,
             )
         eq_(
             str(e),
@@ -124,8 +127,10 @@ class Get_Engine_Test(object):
         hive_metadata = create.create_hive(
             'sqlite:///%s' % os.path.join(tmp, 'hive.db'))
         directory_metadata = create.create_primary_index(
-            'sqlite:///%s' % os.path.join(tmp, 'directory.db'),
-            'frob',
+            directory_uri='sqlite:///%s' \
+                % os.path.join(tmp, 'directory.db'),
+            dimension_name='frob',
+            db_type='INTEGER',
             )
         dimension_id = create.create_dimension(
             hive_metadata=hive_metadata,
@@ -138,9 +143,11 @@ class Get_Engine_Test(object):
             node_name='node42',
             node_uri='sqlite://',
             )
-        (record_id, node_engine) = connect.create_record(
+        dimension_value = 1
+        node_engine = connect.assign_node(
             hive_metadata=hive_metadata,
             dimension_name='frob',
+            dimension_value=dimension_value,
             )
         node_engine.dispose()
         directory_metadata.bind.dispose()
@@ -150,12 +157,12 @@ class Get_Engine_Test(object):
             hive_metadata=hive_metadata,
             dimension_name='frob',
             # make it wrong to trigger the error
-            record_id=record_id+1,
+            dimension_value=dimension_value+1,
             )
         eq_(
             str(e),
-            'No such id: dimension %r, record_id %r' \
-                % ('frob', record_id+1),
+            'No such id: dimension %r, dimension_value %r' \
+                % ('frob', dimension_value+1),
             )
         hive_metadata.bind.dispose()
 
@@ -167,6 +174,7 @@ class Get_Engine_Test(object):
         directory_metadata = create.create_primary_index(
             directory_uri='sqlite:///%s' % os.path.join(tmp, 'directory.db'),
             dimension_name='frob',
+            db_type='INTEGER',
             )
         dimension_id = create.create_dimension(
             hive_metadata=hive_metadata,
@@ -180,9 +188,10 @@ class Get_Engine_Test(object):
             node_name='node34',
             node_uri='sqlite://',
             )
-        (record_id, node_engine) = connect.create_record(
+        node_engine = connect.assign_node(
             hive_metadata=hive_metadata,
             dimension_name='frob',
+            dimension_value=1,
             )
         node_engine.dispose()
         hive_metadata.tables['node_metadata'].delete().execute()
@@ -193,7 +202,7 @@ class Get_Engine_Test(object):
             connect.get_engine,
             hive_metadata,
             'frob',
-            record_id,
+            1,
             )
         eq_(
             str(e),
@@ -223,6 +232,7 @@ class CreateRecord_Test(object):
         directory_metadata = create.create_primary_index(
             directory_uri='sqlite:///%s' % os.path.join(tmp, 'directory.db'),
             dimension_name='frob',
+            db_type='INTEGER',
             )
         hive_metadata = create.create_hive(
             'sqlite:///%s' % os.path.join(tmp, 'hive.db'))
@@ -240,20 +250,19 @@ class CreateRecord_Test(object):
             node_uri=str(p42_metadata.bind.url),
             )
 
-        got = connect.create_record(hive_metadata, 'frob')
-        assert isinstance(got, tuple)
-        eq_(len(got), 2)
-        record_id, node_engine = got
-        eq_(record_id, 1)
+        node_engine = connect.assign_node(hive_metadata, 'frob', 1)
         assert isinstance(node_engine, sq.engine.Engine)
         eq_(str(node_engine.url), str(p42_metadata.bind.url))
+        node_engine.dispose()
 
     def test_bad_no_node(self):
         tmp = maketemp()
 
         directory_metadata = create.create_primary_index(
-            'sqlite:///%s' % os.path.join(tmp, 'directory.db'),
-            'frob',
+            directory_uri='sqlite:///%s' \
+                % os.path.join(tmp, 'directory.db'),
+            dimension_name='frob',
+            db_type='INTEGER',
             )
         hive_metadata = create.create_hive(
             'sqlite:///%s' % os.path.join(tmp, 'hive.db'))
@@ -273,9 +282,10 @@ class CreateRecord_Test(object):
 
         e = assert_raises(
             connect.NoNodesForDimensionError,
-            connect.create_record,
+            connect.assign_node,
             hive_metadata,
             'frob',
+            1,
             )
         eq_(
             str(e),

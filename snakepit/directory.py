@@ -6,10 +6,24 @@ import sqlalchemy as sq
 
 metadata = sq.MetaData()
 
+DB_TYPES = dict(
+    BIGINT=sq.Integer,
+    CHAR=sq.String,
+    DATE=sq.DateTime,
+    DOUBLE=sq.Integer,
+    FLOAT=sq.Float,
+    INTEGER=sq.Integer,
+    SMALLINT=sq.SmallInteger,
+    TIMESTAMP=sq.DateTime,
+    TINYINT=sq.SmallInteger,
+    VARCHAR=sq.String,
+    )
+
 hive_primary = sq.Table(
     'hive_primary_DIMENSION',
     metadata,
-    sq.Column('id', sq.Integer, primary_key=True),
+    # the 'id' column is added dynamically, with type based on
+    # partition_dimension_metadata.db_type
     sq.Column('node', sq.SmallInteger,
               nullable=False,
               index=True,
@@ -21,19 +35,22 @@ hive_primary = sq.Table(
               index=True,
               ),
     sq.Column('read_only', sq.Boolean, nullable=False, default=False),
-
-    sq.UniqueConstraint('id', 'node'),
     )
 
 hive_secondary = sq.Table(
     'hive_secondary_RESOURCE_COLUMN',
     metadata,
+    # TODO this should be whatever datatype
+    # secondary_index_metadata.db_type says, no uniqueness guarantee
     sq.Column('id', sq.Integer,
               nullable=True,
               index=True,
               ),
+    # TODO this should be whatever datatype resource_metadata.db_type
+    # says; this doesn't point to primary index but to the column
+    # named by secondary_index_metadata.column_name in the table named
+    # by resource_metadata.name
     sq.Column('pkey', sq.Integer,
-              sq.ForeignKey("hive_primary_TODO.id"),
               nullable=False,
               index=True,
               ),
@@ -52,3 +69,24 @@ def dynamic_table(table, directory_metadata, name):
         directory_metadata,
         *[c.copy() for c in table.columns])
     return new
+
+def get_primary_table(
+    directory_metadata,
+    dimension_name,
+    db_type,
+    ):
+    table_name = 'hive_primary_%s' % dimension_name
+    table = dynamic_table(
+        table=metadata.tables['hive_primary_DIMENSION'],
+        directory_metadata=directory_metadata,
+        name=table_name,
+        )
+    table.c.add(
+        sq.Column(
+            'id',
+            DB_TYPES[db_type],
+            nullable=False,
+            ),
+        )
+    #table.constraints.add(sq.UniqueConstraint('id', 'node'))
+    return table

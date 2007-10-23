@@ -20,19 +20,25 @@ def create_hive(hive_uri):
 def create_primary_index(
     directory_uri,
     dimension_name,
+    db_type,
     ):
     """
     Create a primary index for C{dimension_name} at C{directory_uri}.
+
+    @param db_type: partition dimension key data type, one of
+    C{snakepit.directory.DB_TYPES} keys
+
+    @type db_type: str
     """
     directory_metadata = sq.MetaData()
     directory_metadata.bind = sq.create_engine(
         directory_uri,
         strategy='threadlocal',
         )
-    table = directory.dynamic_table(
-        table=directory.metadata.tables['hive_primary_DIMENSION'],
+    table = directory.get_primary_table(
         directory_metadata=directory_metadata,
-        name='hive_primary_%s' % dimension_name,
+        dimension_name=dimension_name,
+        db_type=db_type,
         )
     directory_metadata.create_all()
     return directory_metadata

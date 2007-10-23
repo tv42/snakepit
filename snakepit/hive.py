@@ -36,7 +36,6 @@ partition_dimension_metadata = sq.Table(
     sq.Column('id', sq.Integer, primary_key=True),
     sq.Column('name', sq.String(64), nullable=False, unique=True),
     sq.Column('index_uri', sq.String(255), nullable=False),
-    # TODO wth is this used?
     sq.Column('db_type', sq.String(64), nullable=False),
     )
 
