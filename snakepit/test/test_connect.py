@@ -211,7 +211,7 @@ class Get_Engine_Test(object):
             )
 
 
-class CreateRecord_Test(object):
+class AssignNode_Test(object):
 
     def test_simple(self):
         tmp = maketemp()
