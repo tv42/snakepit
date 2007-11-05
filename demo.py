@@ -16,11 +16,13 @@ hive_metadata = create.create_hive(
 directory_metadata = create.create_primary_index(
     directory_uri=directory_uri,
     dimension_name=dimension_name,
+    db_type='INTEGER',
     )
 create.create_dimension(
     hive_metadata=hive_metadata,
     dimension_name=dimension_name,
     directory_uri=directory_uri,
+    db_type='INTEGER',
     )
 create.create_node(
     hive_metadata,
