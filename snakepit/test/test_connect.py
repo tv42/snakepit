@@ -261,6 +261,65 @@ class AssignNode_Test(object):
         eq_(str(node_engine.url), str(p42_metadata.bind.url))
         node_engine.dispose()
 
+    def test_repeat(self):
+        # assign_node is idempotent and shouldn't even be racy against
+        # itself (latter not really unit testable)
+        tmp = maketemp()
+
+        p42_metadata = sq.MetaData()
+        p42_metadata.bind = sq.create_engine(
+            'sqlite:///%s' % os.path.join(tmp, 'p42.db'),
+            strategy='threadlocal',
+            )
+        t_frob = sq.Table(
+            'frob',
+            p42_metadata,
+            sq.Column('id', sq.Integer, primary_key=True),
+            sq.Column('xyzzy', sq.Integer, nullable=False),
+            )
+        p42_metadata.create_all()
+
+        directory_metadata = create.create_primary_index(
+            directory_uri='sqlite:///%s' % os.path.join(tmp, 'directory.db'),
+            dimension_name='frob',
+            db_type='INTEGER',
+            )
+        hive_metadata = create.create_hive(
+            'sqlite:///%s' % os.path.join(tmp, 'hive.db'))
+
+        dimension_id = create.create_dimension(
+            hive_metadata=hive_metadata,
+            dimension_name='frob',
+            directory_uri=str(directory_metadata.bind.url),
+            db_type='INTEGER',
+            )
+        create.create_node(
+            hive_metadata=hive_metadata,
+            dimension_id=dimension_id,
+            node_name='node42',
+            node_uri=str(p42_metadata.bind.url),
+            )
+
+        node_engine = connect.assign_node(hive_metadata, 'frob', 1)
+        assert isinstance(node_engine, sq.engine.Engine)
+        eq_(str(node_engine.url), str(p42_metadata.bind.url))
+        node_engine.dispose()
+
+        node_engine = connect.assign_node(hive_metadata, 'frob', 1)
+        assert isinstance(node_engine, sq.engine.Engine)
+        eq_(str(node_engine.url), str(p42_metadata.bind.url))
+        node_engine.dispose()
+
+        t = directory_metadata.tables['hive_primary_frob']
+        q = sq.select(
+            [sq.func.count('*').label('count')],
+            from_obj=[t],
+            )
+        r = q.execute().fetchone()
+        got = r['count']
+        eq_(got, 1)
+        directory_metadata.bind.dispose()
+
     def test_bad_no_node(self):
         tmp = maketemp()
 

@@ -199,18 +199,43 @@ def assign_node(hive_metadata, dimension_name, dimension_value):
         dimension_name=dimension_name,
         db_type='INTEGER',
         )
-    node_id = _pick_node(
-        hive_metadata=hive_metadata,
-        dimension_name=dimension_name,
-        partition_id=partition_id,
-        )
-    t_primary.insert().execute(
-        id=dimension_value,
-        node=node_id,
-        secondary_index_count=0,
-        last_updated=datetime.datetime.now(),
-        read_only=False,
-        )
+
+    def primary_index_get_or_insert(conn):
+        q = sq.select(
+            [t_primary.c.node],
+            t_primary.c.id==dimension_value,
+            bind=conn,
+            for_update=True,
+            )
+        res = q.execute().fetchone()
+        if res is not None:
+            # it's already in there, we're done!
+            node_id = res[t_primary.c.node]
+            return node_id
+
+        # node not assigned yet, insert while inside this transaction
+        # so the above for_update will hold it locked for us. ugh
+        # locks.
+        node_id = _pick_node(
+            hive_metadata=hive_metadata,
+            dimension_name=dimension_name,
+            partition_id=partition_id,
+            )
+        q = sq.insert(
+            t_primary,
+            {
+                t_primary.c.id: dimension_value,
+                t_primary.c.node: node_id,
+                t_primary.c.secondary_index_count: 0,
+                t_primary.c.last_updated: datetime.datetime.now(),
+                t_primary.c.read_only: False,
+                },
+            )        # important to do this within the transaction
+        conn.execute(q)
+        return node_id
+
+    node_id = directory_metadata.bind.transaction(
+        primary_index_get_or_insert)
     directory_metadata.bind.dispose()
 
     t = hive_metadata.tables['node_metadata']
