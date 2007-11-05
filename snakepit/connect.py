@@ -137,6 +137,22 @@ class NoNodesForDimensionError(Exception):
     def __str__(self):
         return ': '.join([self.__doc__]+list(self.args))
 
+def _pick_node(hive_metadata, dimension_name, partition_id):
+    t = hive_metadata.tables['node_metadata']
+    q = sq.select(
+        [
+            t.c.id,
+            ],
+        t.c.partition_dimension_id==partition_id,
+        )
+    res = q.execute().fetchall()
+    try:
+        res = random.choice(res)
+    except IndexError:
+        raise NoNodesForDimensionError(repr(dimension_name))
+    node_id = res[t.c.id]
+    return node_id
+
 def assign_node(hive_metadata, dimension_name, dimension_value):
     """
     Assign a node for this value of the dimension.
@@ -173,22 +189,6 @@ def assign_node(hive_metadata, dimension_name, dimension_value):
     partition_id = res[t.c.id]
     index_uri = res[t.c.index_uri]
 
-    t = hive_metadata.tables['node_metadata']
-    q = sq.select(
-        [
-            t.c.id,
-            t.c.uri,
-            ],
-        t.c.partition_dimension_id==partition_id,
-        )
-    res = q.execute().fetchall()
-    try:
-        res = random.choice(res)
-    except IndexError:
-        raise NoNodesForDimensionError(repr(dimension_name))
-    node_id = res[t.c.id]
-    node_uri = res[t.c.uri]
-
     directory_metadata = sq.MetaData()
     directory_metadata.bind = sq.create_engine(
         index_uri,
@@ -199,6 +199,11 @@ def assign_node(hive_metadata, dimension_name, dimension_value):
         dimension_name=dimension_name,
         db_type='INTEGER',
         )
+    node_id = _pick_node(
+        hive_metadata=hive_metadata,
+        dimension_name=dimension_name,
+        partition_id=partition_id,
+        )
     t_primary.insert().execute(
         id=dimension_value,
         node=node_id,
@@ -207,6 +212,21 @@ def assign_node(hive_metadata, dimension_name, dimension_value):
         read_only=False,
         )
     directory_metadata.bind.dispose()
+
+    t = hive_metadata.tables['node_metadata']
+    q = sq.select(
+        [
+            t.c.uri,
+            ],
+        t.c.id==node_id,
+        limit=1,
+        )
+    res = q.execute().fetchone()
+    if res is None:
+        raise RuntimeError(
+            'Node disappeared from under us: just added node_id=%r to'
+            ' partition dimension %r' % (node_id, dimension_name))
+    node_uri = res[t.c.uri]
 
     node_engine = sq.create_engine(
         node_uri,
