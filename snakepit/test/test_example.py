@@ -49,7 +49,7 @@ def test_createAndUseTheHive():
         hive_metadata=hive_metadata,
         dimension_name=dimension_name,
         directory_uri=hive_uri,
-        #TODO db_type=sq.String,
+        db_type='CHAR',
         )
 
     # Create a Data Node and add it to the partition dimension
@@ -158,7 +158,7 @@ def test_createAndUseTheHive():
     r = t_resource.insert().execute(
         dimension_id=dimension_id,
         name=resource_name,
-        db_type=0, #TODO sq.Integer,
+        db_type='INTEGER',
         is_partitioning_resource=False,
         )
     (resource_id,) = r.last_inserted_ids()
@@ -175,7 +175,7 @@ def test_createAndUseTheHive():
 #         hive_metadata=hive_metadata,
 #         resource_id=resource_id,
 #         column_name='name',
-#         #TODO db_type=sq.String,
+#         db_type='CHAR',
 #         )
     # Note: SecondaryIndexes are identified by
     # ResourceName.IndexColumnName

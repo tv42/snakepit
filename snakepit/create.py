@@ -50,7 +50,12 @@ class DimensionExistsError(Exception):
     def __str__(self):
         return ': '.join([self.__doc__]+list(self.args))
 
-def create_dimension(hive_metadata, dimension_name, directory_uri):
+def create_dimension(
+    hive_metadata,
+    dimension_name,
+    directory_uri,
+    db_type,
+    ):
     """
     Create a dimension with C{dimension_name} at C{hive_metadata},
     where the directory index is stored at C{directory_uri}.
@@ -69,7 +74,7 @@ def create_dimension(hive_metadata, dimension_name, directory_uri):
         r = t.insert().execute(
             name=dimension_name,
             index_uri=directory_uri,
-            db_type=0, # TODO
+            db_type=db_type,
             )
     except sq.exceptions.SQLError, e:
         # sqlalchemy 0.3.x is hiding details and not providing a

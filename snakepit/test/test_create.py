@@ -121,7 +121,12 @@ class Create_Dimension_Test(object):
         hive_uri = 'sqlite:///%s' % os.path.join(tmp, 'hive.db')
 
         hive_metadata = create.create_hive(hive_uri)
-        dimension_id = create.create_dimension(hive_metadata, 'frob', 'fake-dir-uri')
+        dimension_id = create.create_dimension(
+            hive_metadata=hive_metadata,
+            dimension_name='frob',
+            directory_uri='fake-dir-uri',
+            db_type='INTEGER',
+            )
 
         t = hive_metadata.tables['partition_dimension_metadata']
         q = sq.select(
@@ -151,16 +156,18 @@ class Create_Dimension_Test(object):
         hive_uri = 'sqlite:///%s' % os.path.join(tmp, 'hive.db')
         hive_metadata = create.create_hive(hive_uri)
         create.create_dimension(
-            hive_metadata,
-            'frob',
-            'fake-dir-uri',
+            hive_metadata=hive_metadata,
+            dimension_name='frob',
+            directory_uri='fake-dir-uri',
+            db_type='INTEGER',
             )
         e = assert_raises(
             create.DimensionExistsError,
             create.create_dimension,
-            hive_metadata,
-            'frob',
-            'fake-dir-uri',
+            hive_metadata=hive_metadata,
+            dimension_name='frob',
+            directory_uri='fake-dir-uri',
+            db_type='INTEGER',
             )
         hive_metadata.bind.dispose()
         eq_(
@@ -176,7 +183,11 @@ class Create_Node_Test(object):
         hive_uri = 'sqlite:///%s' % os.path.join(tmp, 'hive.db')
         hive_metadata = create.create_hive(hive_uri)
         dimension_id = create.create_dimension(
-            hive_metadata, 'frob', 'fake-dir-uri')
+            hive_metadata=hive_metadata,
+            dimension_name='frob',
+            directory_uri='fake-dir-uri',
+            db_type='INTEGER',
+            )
         node_id = create.create_node(
             hive_metadata=hive_metadata,
             dimension_id=dimension_id,
@@ -216,7 +227,11 @@ class Create_Node_Test(object):
         hive_uri = 'sqlite:///%s' % os.path.join(tmp, 'hive.db')
         hive_metadata = create.create_hive(hive_uri)
         dimension_id = create.create_dimension(
-            hive_metadata, 'frob', 'fake-dir-uri')
+            hive_metadata=hive_metadata,
+            dimension_name='frob',
+            directory_uri='fake-dir-uri',
+            db_type='INTEGER',
+            )
         node_id = create.create_node(
             hive_metadata,
             'frob',

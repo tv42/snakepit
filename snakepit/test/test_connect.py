@@ -21,6 +21,7 @@ class Get_Hive_Test(object):
             hive_metadata=hive_metadata,
             dimension_name='frob',
             directory_uri=hive_uri,
+            db_type='INTEGER',
             )
         hive_metadata.bind.dispose()
 
@@ -74,6 +75,7 @@ class Get_Engine_Test(object):
             hive_metadata=hive_metadata,
             dimension_name='frob',
             directory_uri=str(directory_metadata.bind.url),
+            db_type='INTEGER',
             )
         directory_metadata.bind.dispose()
         node_id = create.create_node(
@@ -108,6 +110,7 @@ class Get_Engine_Test(object):
             hive_metadata=hive_metadata,
             dimension_name='these-are-nt-the-droids',
             directory_uri='fake',
+            db_type='INTEGER',
             )
         e = assert_raises(
             connect.NoSuchDimensionError,
@@ -136,6 +139,7 @@ class Get_Engine_Test(object):
             hive_metadata=hive_metadata,
             dimension_name='frob',
             directory_uri=str(directory_metadata.bind.url),
+            db_type='INTEGER',
             )
         create.create_node(
             hive_metadata=hive_metadata,
@@ -180,6 +184,7 @@ class Get_Engine_Test(object):
             hive_metadata=hive_metadata,
             dimension_name='frob',
             directory_uri=str(directory_metadata.bind.url),
+            db_type='INTEGER',
             )
         directory_metadata.bind.dispose()
         node_id = create.create_node(
@@ -241,6 +246,7 @@ class AssignNode_Test(object):
             hive_metadata=hive_metadata,
             dimension_name='frob',
             directory_uri=str(directory_metadata.bind.url),
+            db_type='INTEGER',
             )
         directory_metadata.bind.dispose()
         create.create_node(
@@ -271,6 +277,7 @@ class AssignNode_Test(object):
             hive_metadata=hive_metadata,
             dimension_name='frob',
             directory_uri=str(directory_metadata.bind.url),
+            db_type='INTEGER',
             )
         node_id = create.create_node(
             hive_metadata=hive_metadata,
@@ -323,6 +330,7 @@ class UnassignNode_Test(object):
             hive_metadata=hive_metadata,
             dimension_name='frob',
             directory_uri=str(directory_metadata.bind.url),
+            db_type='INTEGER',
             )
         directory_metadata.bind.dispose()
         create.create_node(
@@ -393,6 +401,7 @@ class UnassignNode_Test(object):
             hive_metadata=hive_metadata,
             dimension_name='frob',
             directory_uri=str(directory_metadata.bind.url),
+            db_type='INTEGER',
             )
         node_id = create.create_node(
             hive_metadata=hive_metadata,
@@ -431,6 +440,7 @@ class UnassignNode_Test(object):
             hive_metadata=hive_metadata,
             dimension_name='frob',
             directory_uri=str(directory_metadata.bind.url),
+            db_type='INTEGER',
             )
         node_id = create.create_node(
             hive_metadata=hive_metadata,
