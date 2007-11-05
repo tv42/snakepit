@@ -81,7 +81,7 @@ def get_primary_table(
         directory_metadata=directory_metadata,
         name=table_name,
         )
-    table.c.add(
+    table.append_column(
         sq.Column(
             'id',
             DB_TYPES[db_type],
