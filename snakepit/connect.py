@@ -88,25 +88,28 @@ def get_engine(hive_metadata, dimension_name, dimension_value):
         index_uri,
         strategy='threadlocal',
         )
-    t_primary = directory.get_primary_table(
-        directory_metadata=directory_metadata,
-        dimension_name=dimension_name,
-        db_type='INTEGER',
-        )
-    q = sq.select(
-        [
-            t_primary.c.node,
-            ],
-        t_primary.c.id==dimension_value,
-        limit=1,
-        )
-    res = q.execute().fetchone()
-    if res is None:
-        raise NoSuchIdError(
-            'dimension %r, dimension_value %r'
-            % (dimension_name, dimension_value),
+    try:
+        t_primary = directory.get_primary_table(
+            directory_metadata=directory_metadata,
+            dimension_name=dimension_name,
+            db_type='INTEGER',
             )
-    node_id = res[t_primary.c.node]
+        q = sq.select(
+            [
+                t_primary.c.node,
+                ],
+            t_primary.c.id==dimension_value,
+            limit=1,
+            )
+        res = q.execute().fetchone()
+        if res is None:
+            raise NoSuchIdError(
+                'dimension %r, dimension_value %r'
+                % (dimension_name, dimension_value),
+                )
+        node_id = res[t_primary.c.node]
+    finally:
+        directory_metadata.bind.dispose()
 
     t = hive_metadata.tables['node_metadata']
     q = sq.select(
@@ -234,9 +237,11 @@ def assign_node(hive_metadata, dimension_name, dimension_value):
         conn.execute(q)
         return node_id
 
-    node_id = directory_metadata.bind.transaction(
-        primary_index_get_or_insert)
-    directory_metadata.bind.dispose()
+    try:
+        node_id = directory_metadata.bind.transaction(
+            primary_index_get_or_insert)
+    finally:
+        directory_metadata.bind.dispose()
 
     t = hive_metadata.tables['node_metadata']
     q = sq.select(
@@ -330,28 +335,29 @@ def unassign_node(
         index_uri,
         strategy='threadlocal',
         )
-    t_primary = directory.get_primary_table(
-        directory_metadata=directory_metadata,
-        dimension_name=dimension_name,
-        db_type='INTEGER',
-        )
-    q = t_primary.delete(
-        sq.and_(
-            t_primary.c.id==dimension_value,
-            t_primary.c.node==node_id,
-            # TODO t_primary.c.secondary_index_count==0?
-            # TODO t_primary.c.read_only==False?
-            ),
-        )
-    res = q.execute()
-    if res.rowcount < 1:
-        raise NoSuchNodeForDimensionValueError(
-            'dimension %r value %r, node name %r'
-            % (
-                dimension_name,
-                dimension_value,
-                node_name,
+    try:
+        t_primary = directory.get_primary_table(
+            directory_metadata=directory_metadata,
+            dimension_name=dimension_name,
+            db_type='INTEGER',
+            )
+        q = t_primary.delete(
+            sq.and_(
+                t_primary.c.id==dimension_value,
+                t_primary.c.node==node_id,
+                # TODO t_primary.c.secondary_index_count==0?
+                # TODO t_primary.c.read_only==False?
                 ),
             )
-
-    directory_metadata.bind.dispose()
+        res = q.execute()
+        if res.rowcount < 1:
+            raise NoSuchNodeForDimensionValueError(
+                'dimension %r value %r, node name %r'
+                % (
+                    dimension_name,
+                    dimension_value,
+                    node_name,
+                    ),
+                )
+    finally:
+        directory_metadata.bind.dispose()
